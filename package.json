@@ -1,0 +1,15 @@
+{
+  "name": "ensembl",
+  "version": "1.0.0",
+  "description": "ENSEMBL RESTful API Demo",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^0.16.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "pritesh bhole",
+  "license": "ISC"
+}

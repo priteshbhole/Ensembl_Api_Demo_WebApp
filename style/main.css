@@ -1,0 +1,6 @@
+.break-word{
+	text-align:justify; 
+	word-break:break-all;
+	font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
+	font-weight: normal;
+}

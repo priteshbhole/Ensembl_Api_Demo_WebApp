@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>ENSEMBL - DEMO</title>
+
+	<!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+	<link rel="stylesheet" href="style/main.css">
+	<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+	<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+	<!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.2/html5shiv.min.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+</head>
+
+<body>
+	<div class="container">
+		<h1 class="text-center">ENSEMBL RESTful API Demo</h1>
+		<hr>
+		<div class="col-md-6">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					Search
+				</div>
+				<div class="panel-body">
+					<form>
+						<div class="form-group">
+							<label for="geneSymbol">GENE Symbol <small>(Ex:  BRAF)</small></label>
+							<input type="text" class="form-control" id="geneSymbol" value="BRAF" placeholder="BRAF">
+						</div>
+
+						<div class="form-group">
+							<label for="sequenceNumber">Position in a gene’s protein sequence <small>(Ex: 600)</small></label>
+							<input type="number" class="form-control" id="sequenceNumber" value="600" placeholder="600">
+						</div>
+
+						<div class="form-group">
+							<label for="aminoAcid">Select Amino acid</label>
+							<select name="aminoAcid" id="aminoAcid" class="form-control" required="required">
+						  		<option value="A">Alanine</option>
+						  		<option value="R">Arginine</option>
+						  		<option value="N">Asparagine</option>
+						  		<option value="D">Aspartic acid</option>
+						  		<option value="C">Cysteine</option>
+						  		<option value="Q">Glutamine</option>
+						  		<option value="E">Glutamic acid</option>
+						  		<option value="G">Glycine</option>
+						  		<option value="H">Histidine</option>
+						  		<option value="I">Isoleucine</option>
+						  		<option value="L">Leucine</option>
+						  		<option value="K">Lysine</option>
+						  		<option value="M">Methionine</option>
+						  		<option value="N">Phenylalanine</option>
+						  		<option value="F">Proline</option>
+						  		<option value="S">Serine</option>
+						  		<option value="T">Threonine</option>
+						  		<option value="W">Tryptophan</option>
+						  		<option value="Y">Tyrosine</option>
+						  		<option value="V" selected="selected">Valine</option>
+						  	</select>
+						</div>
+						<button onclick="fetchData()" type="button" class="btn btn-default">Search</button>
+					</form>
+				</div>
+			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					HGVS nomenclature
+				</div>
+				<div class="panel-body">
+					<form>
+						<div class="form-group">
+							<label for="hgvsString">HGVS String <small>(Ex:  BRAF.p:V600E )</small></label>
+							<input type="text" class="form-control" id="hgvsString" value="BRAF.p:V600E " placeholder="Ex: BRAF.p:V600E">
+						</div>
+						<button onclick="findVariation()" type="button" class="btn btn-default">Find</button>
+					</form>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="panel panel-success">
+				<div class="panel-body">
+					<div id="searchResults">
+						&nbsp;
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!--Library used to make Http request-->
+	<script src="node_modules/axios/dist/axios.min.js"></script>
+	<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+	<script>
+		//  sets panel-body default to No results 
+		document.getElementById('searchResults').innerHTML = "No results";
+
+		// Fetches data from Form and makes a GET HTTP request 
+		function fetchData() {
+			let geneSymbol = document.getElementById('geneSymbol').value;
+			let position = document.getElementById('sequenceNumber').value;
+			let aminoAcid = document.getElementById('aminoAcid').value;
+			httpGetRequest(geneSymbol, position, aminoAcid);
+		}
+
+		// Function to parse input string "BRAF.p:V600E "
+		function findVariation() {
+			let hgvsString = document.getElementById('hgvsString').value;
+			geneSymbol = hgvsString.split(":")[0].split(".")[0] // parse anything before . symbol geneSymbol = BRAF
+			objectType = hgvsString.split(":")[0].split(".")[1] // parse anything between :  and . objectType = p
+			variationData = hgvsString.split(":")[1].replace(/ /g, '');// parse after :  variationData = V600E
+			existingAA = variationData[0] // parse variationData further existingAA = V
+			position = variationData.substring(1, variationData.length - 1)// parse variationData further position = 600
+			newAA = variationData.slice(-1);// parse variationData further newAA = E
+			httpGetRequest(geneSymbol, position, existingAA);
+		}
+
+		// fucntion fectches data from ensemble API 
+		function httpGetRequest(geneSymbol, position, aminoAcid) {
+			axios.get('http://rest.ensembl.org/lookup/symbol/homo_sapiens/' + geneSymbol + '.json?;expand=1')
+				.then(function (response) {
+
+					let ensemblGeneId = response.data.id;
+
+					axios.get('http://rest.ensembl.org/sequence/id/' + ensemblGeneId + '.json?;type=protein;multiple_sequences=1')
+						.then(function (response) {
+							displayFilterdSequences(filterSequences(response.data, position, aminoAcid));// Result from filterSequence is passed as a arugement to display
+						}).catch(function (error) {
+							document.getElementById('searchResults').innerHTML = error;
+						});
+				})
+				.catch(function (error) {
+					document.getElementById('searchResults').innerHTML = error;
+				});
+
+		}
+		// Data binding result to HTML
+		function displayFilterdSequences(sequenceArray) {
+
+			document.getElementById('searchResults').innerHTML = "";
+
+			sequenceArray.forEach(function (seq) {
+				let HTMLString = `
+					<div class="panel panel-default">
+						<div class="panel-heading">
+					`
+					+ seq.id +
+					`
+					<span class="pull-right label label-default">
+					`
+					+ seq.molecule +
+					`
+					</span>
+						</div>
+						<div class="panel-body">
+					<div class="break-word">`
+					+ seq.seq +
+					`
+					</div>
+						</div>
+						<div class="panel-footer">
+						<a target="_blank" href="http://www.ensembl.org/id/
+					`
+					+ seq.id +
+					`"
+						>Ensembl Link:&nbsp;
+					`
+					+ seq.id +
+					`	</a>
+						</div>
+					</div>
+ 					`;
+
+				document.getElementById('searchResults').insertAdjacentHTML('beforeend', HTMLString);
+
+			});
+
+		}
+
+		// Filter function returns transcript with p at position 600 
+		function filterSequences(sequenceArray, position, aminoAcid) {
+			let filteredSequences = [];
+			sequenceArray.forEach(function (sequence) {
+				if (sequence.seq.charAt(position - 1) === aminoAcid) {
+					filteredSequences.push(sequence);
+				}
+			});
+			return filteredSequences;
+		}
+	</script>
+</body>
+</html>
