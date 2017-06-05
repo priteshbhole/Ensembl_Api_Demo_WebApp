@@ -17,7 +17,7 @@
 ``` git clone https://github.com/priteshbhole/Ensembl_Api_Demo_WebApp.git```
 
 ###### Change into the project directory
-``` cd ensemble ```
+``` cd Ensembl_Api_Demo_WebApp ```
 
 ###### Install all the project depencencies
 run ```npm install ``` to install all the dependencies
